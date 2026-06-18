@@ -1,0 +1,6 @@
+
+-I/nix/store/sll1rf3ri3dr149hd0d7rn4zmhqirvas-sdl3-3.2.26-dev/include
+-I/nix/store/avp2gkghigarvlwh2msha4r6y0kk9mrs-source
+-std=c++23
+-isystem/nix/store/kzq78n13l8w24jn8bx4djj79k5j717f1-gcc-14.3.0/include/c++/14.3.0
+-isystem/nix/store/kzq78n13l8w24jn8bx4djj79k5j717f1-gcc-14.3.0/include/c++/14.3.0/x86_64-unknown-linux-gnu
