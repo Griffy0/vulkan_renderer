@@ -1,0 +1,5 @@
+# Ignore test files
+testing/*
+
+# Ignore binaries/release
+bin/*
