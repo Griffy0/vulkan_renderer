@@ -3,3 +3,7 @@ testing/*
 
 # Ignore binaries/release
 bin/*
+
+#Ignore generated code
+.clangd
+compile_flags.txt
