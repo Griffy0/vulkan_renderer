@@ -24,6 +24,7 @@ in pkgs.mkShell {
     pkgs.vulkan-validation-layers
     pkgs.glslang
     pkgs.sdl3
+    pkgs.glm
   ];
   shellHook = ''
     export CC="x86_64-w64-mingw32-gcc"
@@ -32,6 +33,7 @@ in pkgs.mkShell {
     export SDL3_PREFIX="${sdl3-mingw}/x86_64-w64-mingw32"
     export VOLK_PREFIX="${volk}"
     export MCFGTHREAD_PREFIX="${mcfgthread}"
+    export GLM_PREFIX="${pkgs.glm}"
 
     SPECS_FILE=$(mktemp)
     $CXX -dumpspecs | sed 's/-lmcfgthread/-Bstatic -lmcfgthread -Bdynamic/' > "$SPECS_FILE"
@@ -54,12 +56,14 @@ in pkgs.mkShell {
         -I$VOLK_PREFIX \
         -L$SDL3_PREFIX/lib \
         -L$MCFGTHREAD_PREFIX/lib \
+        -I$GLM_PREFIX/include \
         -lSDL3.dll \
         -static-libgcc -static-libstdc++
     } 
     export -f build
 
     function compile_shaders() {
+      rm bin/shaders/*
       for shader in shaders/*; do
         if [ -f "$shader" ]; then
           filename=$(basename "$shader")
@@ -73,6 +77,7 @@ in pkgs.mkShell {
     cat > compile_flags.txt << EOF
 
 -I${pkgs.sdl3.dev}/include
+-I$GLM_PREFIX/include
 -I$VOLK_PREFIX
 -std=c++23
 -isystem${libstdcxxInc}
