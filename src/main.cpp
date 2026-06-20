@@ -1321,8 +1321,6 @@ class HelloTriangleApplication {
             if (!surface) {
                 throw std::runtime_error("Failed to load texture");
             };
-            const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(surface->format);
-            std::cout << "Amask: " << details->Amask << std::endl;
 
             SDL_Surface* converted = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32); // Force RGBA
             SDL_DestroySurface(surface);
