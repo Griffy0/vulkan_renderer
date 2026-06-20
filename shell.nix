@@ -25,6 +25,9 @@ in pkgs.mkShell {
     pkgs.glslang
     pkgs.sdl3
     pkgs.glm
+    (pkgs.python3.withPackages (ps: with ps; [
+      
+    ]))
   ];
   shellHook = ''
     export CC="x86_64-w64-mingw32-gcc"
