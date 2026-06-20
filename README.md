@@ -4,6 +4,7 @@ To build:
 ```
 nix-shell shell.nix
 compile_shaders
+move_assets
 build main [-release]
 ```
 Defaults to including debug symbols, `-release` swaps to O3 optimisation and disables validation layers.

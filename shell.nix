@@ -72,6 +72,13 @@ in pkgs.mkShell {
         fi
       done
     }
+
+    function move_assets() {
+      mkdir -p bin
+      cp -f "$SDL3_PREFIX/bin/SDL3.dll" bin/
+      mkdir -p bin/textures
+      cp -f textures/texture.bmp bin/textures/texture.bmp
+    }
     export -f compile_shaders
 
     cat > compile_flags.txt << EOF
