@@ -215,17 +215,17 @@ class HelloTriangleApplication {
             obj2.components[static_cast<size_t>(ComponentType::Render)] = std::make_unique<Render>();
 
             Mesh mesh {{
-                {{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-                {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-                {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-                {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}}},
+                {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
+                {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
+                {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f}},
+                {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}}},
                 {0, 1, 2, 2, 3, 0}};
 
             Mesh mesh2 {{
-                {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-                {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-                {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-                {{-0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}}},
+                {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+                {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
+                {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}},
+                {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}}},
                 {0, 1, 2, 2, 3, 0}};
 
             meshes.push_back(mesh);
@@ -258,11 +258,12 @@ class HelloTriangleApplication {
                 deltaTime = std::chrono::duration<float>(currentTime - startTime).count();
                 startTime = currentTime;
 
-                obj1.getComponent<Transform>()->rot *= glm::quat({0.0f, 0.0f, 1.0f * deltaTime});
+                //obj1.getComponent<Transform>()->rot *= glm::quat({0.0f, 0.0f, 1.0f * deltaTime});
                 double radians = frames * std::numbers::pi / 180.0;
                 obj1.getComponent<Transform>()->pos = {std::sin(radians), 0.0f, 0.0f};
-                obj2.getComponent<Transform>()->pos = {0.0f, std::sin(radians), -0.5f};
+                obj2.getComponent<Transform>()->pos = {0.0f, std::cos(radians), -0.5f};
 
+                obj2.getComponent<Transform>()->parent = obj1.getComponent<Transform>();
 
                 //if (std::chrono::steady_clock::now() - startTime >= std::chrono::seconds(1)){
                 //    std::cout << std::format("FPS: {}", frames) << std::endl;

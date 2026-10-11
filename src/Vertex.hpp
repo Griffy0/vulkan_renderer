@@ -7,9 +7,8 @@
 
 struct Vertex {
     alignas(16) glm::vec3 pos;
-    alignas(16) glm::vec3 color;
     alignas(8) glm::vec2 texCoord;
 
     static VkVertexInputBindingDescription getBindingDescription();
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
 };
