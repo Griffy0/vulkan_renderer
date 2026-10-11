@@ -1,3 +1,4 @@
+#include <string>
 #define VOLK_IMPLEMENTATION
 #include <volk.h>
 #include <SDL3/SDL.h>
@@ -22,9 +23,20 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
+#include <memory>
+#include <cmath>
+#include <numbers>
 #include "helper.hpp"
 #include "Vertex.hpp"
 #include "UniformBufferObject.hpp"
+#include "Mesh.hpp"
+#include "MeshRegion.hpp"
+#include "GameObject.hpp"
+#include "Component.hpp"
+#include "Transform.hpp"
+#include "Render.hpp"
+#include "RenderObject.hpp"
+
 
 class HelloTriangleApplication {
     public:
@@ -54,6 +66,12 @@ class HelloTriangleApplication {
         const uint32_t WIDTH = 800;
         const uint32_t HEIGHT = 600;
         const int MAX_FRAMES_IN_FLIGHT = 2;
+
+        const uint32_t VERTEX_BUFFER_SIZE_MB = 64;
+        const VkDeviceSize VERTEX_BUFFER_SIZE = static_cast<VkDeviceSize>(VERTEX_BUFFER_SIZE_MB) * 1024 * 1024;
+
+        const uint32_t INDEX_BUFFER_SIZE_MB = 32;
+        const VkDeviceSize INDEX_BUFFER_SIZE = static_cast<VkDeviceSize>(INDEX_BUFFER_SIZE_MB) * 1024 * 1024;
 
         const std::vector<const char*> validationLayers = {
             "VK_LAYER_KHRONOS_validation"
@@ -136,22 +154,13 @@ class HelloTriangleApplication {
         bool framebufferResized = false;
         bool minimised = false;
 
-        const std::vector<Vertex> vertices = {
-            {{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+        std::vector<Mesh> meshes = {};
+        uint32_t verticesInBuffer = 0;
+        uint32_t indicesInBuffer = 0;
 
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-        };
-
-        const std::vector<uint16_t> indices = {
-            0, 1, 2, 2, 3, 0,
-            4, 5, 6, 6, 7, 4
-        };
+        std::vector<MeshRegion> regions = {};
+        std::vector<GameObject*> gameObjects = {};
+        std::vector<RenderObject> toDraw = {};
 
         void initWindow() {
             SDL_Init(SDL_INIT_VIDEO);
@@ -189,6 +198,50 @@ class HelloTriangleApplication {
             bool running = true;
             int frames = 0;
             auto startTime = std::chrono::steady_clock::now();
+            auto currentTime = std::chrono::steady_clock::now();
+            float deltaTime;
+
+
+            GameObject obj1;
+            obj1.id = 0;
+
+            obj1.components[static_cast<size_t>(ComponentType::Transform)] = std::make_unique<Transform>();
+            obj1.components[static_cast<size_t>(ComponentType::Render)] = std::make_unique<Render>();
+
+            GameObject obj2;
+            obj2.id = 1;
+
+            obj2.components[static_cast<size_t>(ComponentType::Transform)] = std::make_unique<Transform>();
+            obj2.components[static_cast<size_t>(ComponentType::Render)] = std::make_unique<Render>();
+
+            Mesh mesh {{
+                {{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+                {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+                {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+                {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}}},
+                {0, 1, 2, 2, 3, 0}};
+
+            Mesh mesh2 {{
+                {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+                {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+                {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+                {{-0.5f, 0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}}},
+                {0, 1, 2, 2, 3, 0}};
+
+            meshes.push_back(mesh);
+            meshes.push_back(mesh2);
+            
+            for (Mesh mesh_ : meshes) {
+                regions.push_back(addMesh(mesh_));
+            };
+
+            obj1.getComponent<Render>() -> region = &regions[0];
+            obj2.getComponent<Render>() -> region = &regions[1];
+
+            gameObjects.push_back(&obj1);
+            gameObjects.push_back(&obj2);
+
+                
             while (running) {
                 while (SDL_PollEvent(&event)) {
                     if (event.type == SDL_EVENT_QUIT) running = false;
@@ -201,15 +254,77 @@ class HelloTriangleApplication {
                     continue;
                 };
 
-                if (std::chrono::steady_clock::now() - startTime >= std::chrono::seconds(1)){
-                    std::cout << std::format("FPS: {}", frames) << std::endl;
-                    startTime = std::chrono::steady_clock::now();
-                    frames = 0;
-                };
+                currentTime = std::chrono::steady_clock::now();
+                deltaTime = std::chrono::duration<float>(currentTime - startTime).count();
+                startTime = currentTime;
+
+                obj1.getComponent<Transform>()->rot *= glm::quat({0.0f, 0.0f, 1.0f * deltaTime});
+                double radians = frames * std::numbers::pi / 180.0;
+                obj1.getComponent<Transform>()->pos = {std::sin(radians), 0.0f, 0.0f};
+                obj2.getComponent<Transform>()->pos = {0.0f, std::sin(radians), 0.0f};
+
+
+
+                //if (std::chrono::steady_clock::now() - startTime >= std::chrono::seconds(1)){
+                //    std::cout << std::format("FPS: {}", frames) << std::endl;
+                //    startTime = std::chrono::steady_clock::now();
+                //    frames = 0;
+                //};
+
+                std::cout << std::format("FPS: {:.0f}", (1.0f / deltaTime)) << std::endl;
+
                 drawFrame();
                 frames++;
+                frames = frames % 360;
             };
             vkDeviceWaitIdle(device);
+        };
+
+        MeshRegion addMesh(const Mesh& mesh) {
+            // Make this assign to the object once objects are implemented
+            const uint32_t vertexCount = static_cast<uint32_t>(mesh.vertices.size());
+            const uint32_t indexCount = static_cast<uint32_t>(mesh.indices.size());
+
+            const VkDeviceSize verticesBytes = vertexCount * sizeof(Vertex);
+            const VkDeviceSize indicesBytes = indexCount * sizeof(uint32_t);
+
+            if ((verticesInBuffer + vertexCount) * sizeof(Vertex) > VERTEX_BUFFER_SIZE ||
+                (indicesInBuffer + indexCount) * sizeof(uint32_t) > INDEX_BUFFER_SIZE) {
+                throw std::runtime_error("Buffers full"); // Add buffer expansion here
+            };
+
+            MeshRegion region;
+            region.firstIndex = indicesInBuffer;
+            region.firstVertex = static_cast<int32_t>(verticesInBuffer);
+            region.indexCount = indexCount;
+
+            VkBuffer stagingBuffer;
+            VkDeviceMemory stagingBufferMemory;
+            createBuffer(
+                    verticesBytes + indicesBytes,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                    stagingBuffer,
+                    stagingBufferMemory
+            );
+
+            void* data;
+            vkMapMemory(device, stagingBufferMemory, 0, verticesBytes + indicesBytes, 0, &data);
+            memcpy(data, mesh.vertices.data(), verticesBytes);
+            memcpy(static_cast<char*>(data) + verticesBytes, mesh.indices.data(), indicesBytes);
+            vkUnmapMemory(device, stagingBufferMemory);
+
+            copyBuffer(stagingBuffer, vertexBuffer, verticesBytes, 0, verticesInBuffer * sizeof(Vertex));
+            copyBuffer(stagingBuffer, indexBuffer, indicesBytes, verticesBytes, indicesInBuffer * sizeof(uint32_t));
+
+            vkDestroyBuffer(device, stagingBuffer, nullptr);
+            vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+            verticesInBuffer += vertexCount;
+            indicesInBuffer += indexCount;
+
+            return region;
         };
 
         void cleanupSwapChain() {
@@ -324,12 +439,12 @@ class HelloTriangleApplication {
             vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
         };
 
-        void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+        void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0) {
             VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
             VkBufferCopy copyRegion{};
-            copyRegion.srcOffset = 0;
-            copyRegion.dstOffset = 0;
+            copyRegion.srcOffset = srcOffset;
+            copyRegion.dstOffset = dstOffset;
             copyRegion.size = size;
             vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
@@ -1136,10 +1251,17 @@ class HelloTriangleApplication {
             depthStencil.front = {};
             depthStencil.back = {};
 
+            VkPushConstantRange pushConstantRange{};
+            pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+            pushConstantRange.offset = 0;
+            pushConstantRange.size = sizeof(glm::mat4);
+
             VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
             pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
             pipelineLayoutInfo.setLayoutCount = 1;
             pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+            pipelineLayoutInfo.pushConstantRangeCount = 1;
+            pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
             if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to create pipeline layout");
@@ -1384,12 +1506,12 @@ class HelloTriangleApplication {
         };
 
         void createVertexBuffer(){
-            VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+            /*VkDeviceSize dataSize = sizeof(vertices[0]) * vertices.size();
 
             VkBuffer stagingBuffer;
             VkDeviceMemory stagingBufferMemory;
             createBuffer(
-                    bufferSize,
+                    dataSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -1398,12 +1520,12 @@ class HelloTriangleApplication {
             );
 
             void* data;
-            vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-            memcpy(data, vertices.data(), (size_t) bufferSize);
-            vkUnmapMemory(device, stagingBufferMemory);
+            vkMapMemory(device, stagingBufferMemory, 0, dataSize, 0, &data);
+            memcpy(data, vertices.data(), (size_t) dataSize);
+            vkUnmapMemory(device, stagingBufferMemory);*/
 
             createBuffer(
-                    bufferSize,
+                    VERTEX_BUFFER_SIZE,
                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | 
                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -1411,19 +1533,21 @@ class HelloTriangleApplication {
                     vertexBufferMemory
             );
 
-            copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+            //copyBuffer(stagingBuffer, vertexBuffer, dataSize);
 
-            vkDestroyBuffer(device, stagingBuffer, nullptr);
-            vkFreeMemory(device, stagingBufferMemory, nullptr);
+            //verticesInBuffer += vertices.size();
+
+            //vkDestroyBuffer(device, stagingBuffer, nullptr);
+            //vkFreeMemory(device, stagingBufferMemory, nullptr);
         };
 
         void createIndexBuffer() {
-            VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+            /*VkDeviceSize dataSize = sizeof(indices[0]) * indices.size();
 
             VkBuffer stagingBuffer;
             VkDeviceMemory stagingBufferMemory;
             createBuffer(
-                    bufferSize,
+                    dataSize,
                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -1432,12 +1556,12 @@ class HelloTriangleApplication {
             );
 
             void* data;
-            vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-            memcpy(data, indices.data(), (size_t) bufferSize);
+            vkMapMemory(device, stagingBufferMemory, 0, dataSize, 0, &data);
+            memcpy(data, indices.data(), (size_t) dataSize);
             vkUnmapMemory(device, stagingBufferMemory);
-
+*/
             createBuffer(
-                    bufferSize,
+                    INDEX_BUFFER_SIZE,
                     VK_BUFFER_USAGE_TRANSFER_DST_BIT | 
                     VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -1445,10 +1569,12 @@ class HelloTriangleApplication {
                     indexBufferMemory
             );
 
-            copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+           // copyBuffer(stagingBuffer, indexBuffer, dataSize);
 
-            vkDestroyBuffer(device, stagingBuffer, nullptr);
-            vkFreeMemory(device, stagingBufferMemory, nullptr);
+            //indicesInBuffer += indices.size();
+
+            //vkDestroyBuffer(device, stagingBuffer, nullptr);
+            //vkFreeMemory(device, stagingBufferMemory, nullptr);
         };
 
         void createUniformBuffers() {
@@ -1529,7 +1655,7 @@ class HelloTriangleApplication {
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+            vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdBindDescriptorSets(
                     commandBuffer, 
@@ -1542,8 +1668,11 @@ class HelloTriangleApplication {
                     nullptr
             );
 
-            // Buffer, Vertex count, instances (1 if non-instanced), first vertex index, first instance index
-            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+            // Buffer, Vertex count, instance count (1 if non-instanced), first vertex index, first instance index
+            for (RenderObject& renderObject : toDraw) {
+                vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &renderObject.transformation);
+                vkCmdDrawIndexed(commandBuffer, renderObject.region->indexCount, 1, renderObject.region->firstIndex, renderObject.region->firstVertex, 0);
+            };
 
             vkCmdEndRenderPass(commandBuffer);
 
@@ -1604,8 +1733,8 @@ class HelloTriangleApplication {
             float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
             UniformBufferObject ubo{};
-            ubo.model = glm::rotate(glm::mat4(1.0f), time*glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-            ubo.model = glm::rotate(ubo.model, time*glm::radians(90.0f), glm::vec3(0.5f, 0.5f, 0.0f));
+            //ubo.model = glm::mat4(1.0f); //glm::rotate(glm::mat4(1.0f), time*glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            //ubo.model = glm::rotate(ubo.model, time*glm::radians(90.0f), glm::vec3(0.5f, 0.5f, 0.0f));
             ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
             ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
             ubo.proj[1][1] *= -1; //Flip Y for vulkan
@@ -1677,6 +1806,16 @@ class HelloTriangleApplication {
         };
 
         void drawFrame() {
+            toDraw.clear();
+            for (GameObject* gameObject : gameObjects) {
+                Render* render = gameObject->getComponent<Render>();
+                if (!render)    continue;
+                Transform* transform = gameObject->getComponent<Transform>();
+                if (!transform) continue;
+
+                toDraw.push_back({render->region, transform->toWorld()});
+            };
+
             // Device, how many fences, fence array, wait for all fences?, timeout length
             vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
