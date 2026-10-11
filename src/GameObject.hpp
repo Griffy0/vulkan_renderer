@@ -1,7 +1,7 @@
 #pragma once
 #include <array>
 #include <memory>
-#include "Component.hpp"
+#include "components/Component.hpp"
 
 class GameObject {
     public: 

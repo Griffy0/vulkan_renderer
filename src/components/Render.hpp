@@ -1,6 +1,6 @@
 #pragma once
 #include "Component.hpp"
-#include "MeshRegion.hpp"
+#include "../MeshRegion.hpp"
 
 class Render : public Component {
     public:

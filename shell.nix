@@ -49,7 +49,7 @@ in pkgs.mkShell {
       fi
 
       mkdir -p bin
-      $CXX src/*.cpp -o "bin/$file.exe" -std=c++23 \
+      $CXX $(find src -name '*.cpp') -o "bin/$file.exe" -std=c++23 \
         $opt_flags \
         -specs="$SPECS_FILE" \
         -DVK_USE_PLATFORM_WIN32_KHR \

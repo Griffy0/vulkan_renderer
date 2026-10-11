@@ -32,9 +32,9 @@
 #include "Mesh.hpp"
 #include "MeshRegion.hpp"
 #include "GameObject.hpp"
-#include "Component.hpp"
-#include "Transform.hpp"
-#include "Render.hpp"
+#include "components/Component.hpp"
+#include "components/Transform.hpp"
+#include "components/Render.hpp"
 #include "RenderObject.hpp"
 
 
@@ -236,7 +236,7 @@ class HelloTriangleApplication {
             };
 
             obj1.getComponent<Render>() -> region = &regions[0];
-            obj2.getComponent<Render>() -> region = &regions[1];
+            obj2.getComponent<Render>() -> region = &regions[0];
 
             gameObjects.push_back(&obj1);
             gameObjects.push_back(&obj2);
@@ -261,8 +261,7 @@ class HelloTriangleApplication {
                 obj1.getComponent<Transform>()->rot *= glm::quat({0.0f, 0.0f, 1.0f * deltaTime});
                 double radians = frames * std::numbers::pi / 180.0;
                 obj1.getComponent<Transform>()->pos = {std::sin(radians), 0.0f, 0.0f};
-                obj2.getComponent<Transform>()->pos = {0.0f, std::sin(radians), 0.0f};
-
+                obj2.getComponent<Transform>()->pos = {0.0f, std::sin(radians), -0.5f};
 
 
                 //if (std::chrono::steady_clock::now() - startTime >= std::chrono::seconds(1)){
