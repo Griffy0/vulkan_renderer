@@ -61,6 +61,8 @@ in pkgs.mkShell {
         -L$MCFGTHREAD_PREFIX/lib \
         -I$GLM_PREFIX/include \
         -lSDL3.dll \
+        -DGLM_FORCE_RADIANS \
+        -DGLM_FORCE_DEPTH_ZERO_TO_ONE \
         -static-libgcc -static-libstdc++
     } 
     export -f build

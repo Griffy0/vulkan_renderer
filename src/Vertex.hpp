@@ -2,8 +2,6 @@
 #include <volk.h>
 #include <glm/glm.hpp>
 #include <array>
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_ONE
 
 struct Vertex {
     alignas(16) glm::vec3 pos;
