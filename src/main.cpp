@@ -35,10 +35,11 @@
 #include "components/Component.hpp"
 #include "components/Transform.hpp"
 #include "components/Render.hpp"
+#include "components/Camera.hpp"
 #include "RenderObject.hpp"
 
 
-class HelloTriangleApplication {
+class VulkanRenderer {
     public:
         void run() {
             initWindow();
@@ -162,6 +163,8 @@ class HelloTriangleApplication {
         std::vector<GameObject*> gameObjects = {};
         std::vector<RenderObject> toDraw = {};
 
+        GameObject* camera;
+
         void initWindow() {
             SDL_Init(SDL_INIT_VIDEO);
             window = SDL_CreateWindow("Vulkan", WIDTH, HEIGHT, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
@@ -214,22 +217,26 @@ class HelloTriangleApplication {
             obj2.components[static_cast<size_t>(ComponentType::Transform)] = std::make_unique<Transform>();
             obj2.components[static_cast<size_t>(ComponentType::Render)] = std::make_unique<Render>();
 
+            obj2.getComponent<Transform>()->parent = obj1.getComponent<Transform>();
+
+            GameObject cam;
+            cam.id = 2;
+
+            cam.components[static_cast<size_t>(ComponentType::Transform)] = std::make_unique<Transform>();
+            cam.getComponent<Transform>()->pos = {0.0f, 0.0f, 4.0f};
+            cam.components[static_cast<size_t>(ComponentType::Camera)] = std::make_unique<Camera>();
+
+            camera = &cam;
+
             Mesh mesh {{
-                {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
-                {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-                {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f}},
-                {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}}},
+                {{-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}},
+                {{0.5f, -0.5f, 0.0f}, {1.0f, 1.0f}},
+                {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f}},
+                {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f}}},
                 {0, 1, 2, 2, 3, 0}};
 
-            Mesh mesh2 {{
-                {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
-                {{0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-                {{0.5f, 0.5f, -0.5f}, {0.0f, 1.0f}},
-                {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f}}},
-                {0, 1, 2, 2, 3, 0}};
 
             meshes.push_back(mesh);
-            meshes.push_back(mesh2);
             
             for (Mesh mesh_ : meshes) {
                 regions.push_back(addMesh(mesh_));
@@ -258,12 +265,11 @@ class HelloTriangleApplication {
                 deltaTime = std::chrono::duration<float>(currentTime - startTime).count();
                 startTime = currentTime;
 
-                //obj1.getComponent<Transform>()->rot *= glm::quat({0.0f, 0.0f, 1.0f * deltaTime});
+                cam.getComponent<Transform>()->rotate({0.0f, 0.5f * deltaTime, 0.0f});
                 double radians = frames * std::numbers::pi / 180.0;
-                obj1.getComponent<Transform>()->pos = {std::sin(radians), 0.0f, 0.0f};
-                obj2.getComponent<Transform>()->pos = {0.0f, std::cos(radians), -0.5f};
+                //obj1.getComponent<Transform>()->pos = {std::sin(radians), 0.0f, 0.0f};
+                obj2.getComponent<Transform>()->pos = {0.0f, 0.5f, -0.5f};//std::cos(radians), -0.5f};
 
-                obj2.getComponent<Transform>()->parent = obj1.getComponent<Transform>();
 
                 //if (std::chrono::steady_clock::now() - startTime >= std::chrono::seconds(1)){
                 //    std::cout << std::format("FPS: {}", frames) << std::endl;
@@ -614,6 +620,11 @@ class HelloTriangleApplication {
                 throw std::runtime_error("Failed to initialise Volk");
             };
 
+            uint32_t loaderVersion = volkGetInstanceVersion();
+            if (loaderVersion < VK_API_VERSION_1_2) {
+                throw std::runtime_error("Vulkan 1.2+ is required!");
+            };
+
             
             if (enableValidationLayers && !checkValidationLayerSupport()) {
                 throw std::runtime_error("Requested validation layers are not available");
@@ -621,6 +632,7 @@ class HelloTriangleApplication {
 
             VkApplicationInfo appInfo{};
             appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+            appInfo.apiVersion = VK_API_VERSION_1_2;
             appInfo.pApplicationName = "Hello Triangle";
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "No Engine";
@@ -876,6 +888,7 @@ class HelloTriangleApplication {
             createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
             createInfo.ppEnabledExtensionNames = deviceExtensions.data();
             createInfo.enabledLayerCount = 0;
+            //createInfo.pNext = nullptr;
 
             if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to create logical device");
@@ -1735,8 +1748,14 @@ class HelloTriangleApplication {
             UniformBufferObject ubo{};
             //ubo.model = glm::mat4(1.0f); //glm::rotate(glm::mat4(1.0f), time*glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
             //ubo.model = glm::rotate(ubo.model, time*glm::radians(90.0f), glm::vec3(0.5f, 0.5f, 0.0f));
-            ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-            ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
+            ubo.view = glm::inverse(camera->getComponent<Transform>()->toWorld());
+            
+                //glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            ubo.proj = glm::perspective(
+                    glm::radians(camera->getComponent<Camera>()->fov), 
+                    swapChainExtent.width / (float) swapChainExtent.height, 
+                    camera->getComponent<Camera>()->near_plane, 
+                    camera->getComponent<Camera>()->far_plane); //FOV, aspect ratio, near view, far view
             ubo.proj[1][1] *= -1; //Flip Y for vulkan
 
             memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
@@ -1880,7 +1899,7 @@ int main()
 {
     try
     {
-        HelloTriangleApplication app;
+        VulkanRenderer app;
         app.run();
     }
     catch (const std::exception& e)

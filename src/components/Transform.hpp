@@ -8,7 +8,7 @@
 class Transform : public Component {
     public: 
         static constexpr ComponentType TYPE = ComponentType::Transform;
-        Transform* parent;
+        Transform* parent = nullptr;
         std::vector<Transform*> children;
         glm::vec3 pos = {0.0f, 0.0f, 0.0f}; // Object world pos
         glm::vec3 scale = {1.0f, 1.0f, 1.0f}; // Object scale
@@ -16,4 +16,5 @@ class Transform : public Component {
         glm::quat rot = {1.0f, 0.0f, 0.0f, 0.0f}; // Rotation quaternion
 
     glm::mat4 toWorld();
+    void rotate(glm::vec3 v);
 };

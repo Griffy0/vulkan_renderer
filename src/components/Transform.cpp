@@ -17,3 +17,7 @@ glm::mat4 getTransformation(const Transform& transform) {
 glm::mat4 Transform::toWorld() {
     return getTransformation(*this);
 };
+
+void Transform::rotate(glm::vec3 v) {
+    rot *= glm::quat(-v);
+};
