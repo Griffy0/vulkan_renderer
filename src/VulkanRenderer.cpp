@@ -21,7 +21,7 @@
 #include <memory>
 #include <cmath>
 #include <numbers>
-#include "helper.hpp"
+#include "readFile.hpp"
 #include "Vertex.hpp"
 #include "UniformBufferObject.hpp"
 #include "components/Component.hpp"
