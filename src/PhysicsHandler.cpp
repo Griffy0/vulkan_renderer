@@ -28,7 +28,7 @@ void PhysicsHandler::updateGameObject(GameObject* gameObject, float deltaTime) {
     Physics* phys = gameObject->getComponent<Physics>();
     Transform* transform = gameObject->getComponent<Transform>();
 
-    phys->velocity -= (phys->drag_coefficients * 1.225f * 0.5f * phys->velocity * phys->velocity * glm::sign(phys->velocity)) / phys->mass * deltaTime;
+    phys->velocity -= (phys->drag_coefficients * 1.225f * 0.5f * phys->velocity * phys->velocity * glm::sign(phys->velocity)) / phys->mass * deltaTime; // Fd = 1/2 Cd d v^2 a
     phys->velocity += phys->acceleration * deltaTime;
     transform->pos += phys->velocity * deltaTime;
 };

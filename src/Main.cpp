@@ -150,8 +150,8 @@ int main() {
             //obj2.getComponent<Transform>()->rotate({0.0f, 0.0f, 1.0f*deltaTime});
             //obj2.getComponent<Transform>()->pos = {0.0f, 0.5f, -0.5f};//std::cos(radians), -0.5f};
             Physics phys = *cam.getComponent<Physics>();
-            std::cout << std::format("Velocity; x={}, y={}, z={}", phys.velocity.x, phys.velocity.y, phys.velocity.z) << std::endl;
-            //std::cout << rng.randf(3) << std::endl;
+            //std::cout << std::format("Velocity; x={}, y={}, z={}", phys.velocity.x, phys.velocity.y, phys.velocity.z) << std::endl;
+            std::cout << std::format("FPS: {}", 1/deltaTime) << std::endl;
             should_stop |= renderer.tick(deltaTime);
             should_stop |= physHandler.tick(deltaTime);
             ticks++;
