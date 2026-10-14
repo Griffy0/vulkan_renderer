@@ -128,8 +128,8 @@ int main() {
 
         float deltaMouseX = 0.0f;
         float deltaMouseY = 0.0f;
-        float xSensitivity = 0.25f;
-        float ySensitivity = 0.25f;
+        float xSensitivity = 0.1f;
+        float ySensitivity = 0.1f;
         float speed = 0.5f;
         cam.getComponent<Physics>()->addForce({-2.0f, 0.0f, 0.0f});
         while (!should_stop) {
