@@ -1,5 +1,4 @@
 #pragma once
-#include <glm/ext/scalar_uint_sized.hpp>
 #include <string>
 #include <volk.h>
 #include <SDL3/SDL.h>
@@ -34,16 +33,18 @@ class VulkanRenderer {
         int MAX_FRAMES_IN_FLIGHT = 2;
         uint32_t VERTEX_BUFFER_SIZE_MB;
         uint32_t INDEX_BUFFER_SIZE_MB;
+        VkPolygonMode POLYGON_MODE;
 
         VulkanRenderer(
                 std::string WindowTitle = "Vulkan",
                 uint32_t InitialWindowWidth = 800,
                 uint32_t InitialWindowHeight = 600,
                 uint32_t VertexBufferSize = 64,
-                uint32_t IndexBufferSize = 32
+                uint32_t IndexBufferSize = 32,
+                VkPolygonMode PolygonMode = VK_POLYGON_MODE_FILL
         );
 
-        void init();
+        SDL_Window* init();
         bool tick(float deltaTime);
         void end();
         void addGameObject(GameObject& gameObject);

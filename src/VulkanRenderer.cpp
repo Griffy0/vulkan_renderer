@@ -1,7 +1,6 @@
 #include "VulkanRenderer.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 #include <cstdint>
 #include <algorithm>
@@ -21,6 +20,7 @@
 #include <memory>
 #include <cmath>
 #include <numbers>
+#include <vulkan/vulkan_core.h>
 #include "readFile.hpp"
 #include "Vertex.hpp"
 #include "UniformBufferObject.hpp"
@@ -35,7 +35,8 @@ VulkanRenderer::VulkanRenderer(
         uint32_t InitialWindowWidth,
         uint32_t InitialWindowHeight,
         uint32_t VertexBufferSize,
-        uint32_t IndexBufferSize
+        uint32_t IndexBufferSize,
+        VkPolygonMode PolygonMode
         ) {
 
     TITLE = WindowTitle;
@@ -46,61 +47,13 @@ VulkanRenderer::VulkanRenderer(
     INDEX_BUFFER_SIZE_MB = IndexBufferSize;
     VERTEX_BUFFER_SIZE = static_cast<VkDeviceSize>(VERTEX_BUFFER_SIZE_MB) * 1024 * 1024;
     INDEX_BUFFER_SIZE = static_cast<VkDeviceSize>(INDEX_BUFFER_SIZE_MB) * 1024 * 1024;
+    POLYGON_MODE = PolygonMode;
 };
 
-void VulkanRenderer::init() {
+SDL_Window* VulkanRenderer::init() {
     initWindow();
     initVulkan();
-    /*int frames = 0;
-    auto startTime = std::chrono::steady_clock::now();
-    auto currentTime = std::chrono::steady_clock::now();
-    float deltaTime;
-
-
-    GameObject obj1;
-    obj1.id = 0;
-
-    obj1.components[static_cast<size_t>(ComponentType::Transform)] = std::make_unique<Transform>();
-    obj1.components[static_cast<size_t>(ComponentType::Render)] = std::make_unique<Render>();
-
-    GameObject obj2;
-    obj2.id = 1;
-
-    obj2.components[static_cast<size_t>(ComponentType::Transform)] = std::make_unique<Transform>();
-    obj2.components[static_cast<size_t>(ComponentType::Render)] = std::make_unique<Render>();
-
-    obj2.getComponent<Transform>()->parent = obj1.getComponent<Transform>();
-
-    GameObject cam;
-    cam.id = 2;
-
-    cam.components[static_cast<size_t>(ComponentType::Transform)] = std::make_unique<Transform>();
-    cam.getComponent<Transform>()->pos = {0.0f, 0.0f, 4.0f};
-    cam.components[static_cast<size_t>(ComponentType::Camera)] = std::make_unique<Camera>();
-
-    camera = &cam;
-
-    Mesh mesh {{
-        {{-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}},
-        {{0.5f, -0.5f, 0.0f}, {1.0f, 1.0f}},
-        {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f}},
-        {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f}}},
-        {0, 1, 2, 2, 3, 0}};
-
-
-    meshes.push_back(mesh);
-    
-    for (Mesh mesh_ : meshes) {
-        regions.push_back(addMesh(mesh_));
-    };
-
-    obj1.getComponent<Render>() -> region = &regions[0];
-    obj2.getComponent<Render>() -> region = &regions[0];
-
-    gameObjects.push_back(&obj1);
-    gameObjects.push_back(&obj2);*/
-
-
+    return window;
 };
 
 bool VulkanRenderer::tick(float deltaTime) {
@@ -130,7 +83,7 @@ bool VulkanRenderer::tick(float deltaTime) {
     //    frames = 0;
     //};
 
-    std::cout << std::format("FPS: {:.0f}", (1.0f / deltaTime)) << std::endl;
+    //std::cout << std::format("FPS: {:.0f}", (1.0f / deltaTime)) << std::endl;
 
     if (!camera) {
         std::cout << "No camera found!" << std::endl;
@@ -1132,7 +1085,7 @@ void VulkanRenderer::createGraphicsPipeline() {
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL; // How to draw polygons, can alternatively draw edges or points
+    rasterizer.polygonMode = POLYGON_MODE; // How to draw polygons, can alternatively draw edges or points; FILL/LINE/POINT
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT; // Cull the back face of tris
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; // Clockwise for the face of a triangle accounting for GLM flip
@@ -1811,19 +1764,3 @@ void VulkanRenderer::drawFrame() {
     };
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 };
-
-/*int main()
-{
-try
-{
-VulkanRenderer app;
-app.run();
-}
-catch (const std::exception& e)
-{
-std::cerr << e.what() << std::endl;
-return EXIT_FAILURE;
-}
-std::cout << "Program Closing" << std::endl;
-return EXIT_SUCCESS;
-}*/

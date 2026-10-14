@@ -1,4 +1,5 @@
 #include "Transform.hpp"
+#include <glm/ext/quaternion_geometric.hpp>
 
 glm::mat4 getTransformation(const Transform& transform) {
     glm::mat4 transformationMatrix = 
@@ -19,5 +20,5 @@ glm::mat4 Transform::toWorld() {
 };
 
 void Transform::rotate(glm::vec3 v) {
-    rot *= glm::quat(-v);
+    rot = glm::normalize(rot * glm::quat(-v));
 };

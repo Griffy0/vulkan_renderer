@@ -20,8 +20,9 @@ class GameObject {
         };
 
         template <typename T>
-        void addComponent() {
+        T* addComponent() {
             if (getComponent<T>())     throw std::runtime_error("Object already has this component!");
             components[static_cast<size_t>(T::TYPE)] = std::make_unique<T>();
+            return getComponent<T>();
         };
 };
